@@ -1,0 +1,24 @@
+//
+// Fac_rec.spl -- Factorial recursive
+//
+
+
+proc main(){
+    var n   : int;
+    var res : int;
+
+    fac(n, res);
+    printi(res);
+}
+
+proc fac(n: int, ref res: int){
+    if(n == 1){
+        res := 1;
+    }
+    else {
+        var tmp_res : int;
+        fac(n - 1, tmp_res);
+        res := res * tmp_res;
+    }
+
+}

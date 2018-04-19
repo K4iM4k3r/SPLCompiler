@@ -1,0 +1,19 @@
+//
+// Proc.spl -- Sum of two numbers
+//
+
+
+proc main(){
+    var a : int;
+    var b : int;
+    var c : int;
+    readi(a);
+    readi(b);
+
+    sum(a, b, c);
+    printi(c);
+}
+
+proc sum(a: int, b: int, ref c: int){
+    c := a + b;
+}

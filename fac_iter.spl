@@ -1,0 +1,26 @@
+//
+// Fac_iter.spl -- Factorial iterative
+//
+
+
+proc main(){
+    var n   : int;
+    var res : int;
+
+    fac(n, res);
+    printi(res);
+}
+
+proc fac(n: int, ref ret: int){
+    var a   : int;
+    var res : int;
+    a   := n;
+    res := 0;
+
+    while(a > 0){
+        res := res * a;
+        a   := a - 1;
+    }
+
+    ret := res;
+}

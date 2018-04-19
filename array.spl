@@ -1,0 +1,43 @@
+//
+// array.spl -- Read, Sort, Write - Array
+//
+
+
+proc main(){
+    var n   : int;
+    var k   : int;
+    var tmp : int;
+    type ar = array[5] of int;
+
+    n := 0;
+    k := 0;
+
+    // Einlesen
+    while(n < 5){
+        readi(ar[n]);
+        n := n + 1;
+    }
+
+    // Sortieren
+    n := 0;
+    while(n < 5){
+        k := n + 1 ;
+        while(k < 5){
+            if(ar[n] > ar[k]){
+                tmp := ar[n];
+                ar[n] := ar[k];
+                ar[k] := tmp;
+            }
+            k := k + 1;
+        }
+        n := n + 1;
+    }
+
+    // Schreiben
+    n := 0;
+
+    while(n < 5){
+        printi(ar[n]);
+    }
+}
+
