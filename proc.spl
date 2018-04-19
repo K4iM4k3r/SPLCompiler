@@ -3,7 +3,7 @@
 //
 
 
-proc main(){
+proc mains(){
     var a : int;
     var b : int;
     var c : int;

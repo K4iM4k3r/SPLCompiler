@@ -1,4 +1,4 @@
-package compiler.frontend
+package de.thm.spl.Parser
 
 import scala.util.matching.Regex
 import scala.util.parsing.input.{Position, Reader}
@@ -9,23 +9,29 @@ import scala.util.parsing.input.{Position, Reader}
  */
 class ProgScanner extends ProgToken {
 
-  private val numberPatS  = """(0|(?:[1-9][0-9]*))"""
-  private val idPatS      = """(\w+)"""
+  private val literalPatS  = """(0|(?:[1-9][0-9]*))"""
+  private val litHexPatS  = """(0x(?:[a-f]|[A-F]|[0-9])+)"""
+  private val litAsciiPatS = """(\`(?:.|\\n)\`)"""
+
+  private val idPatS      = """((?:\w|\_)+)"""
   private val addOpPatS   = """(\+|\-)"""
   private val multOpPatS  = """(\*|/|%)"""
-  private val compOpPatS  = """(<=|>=|=|<|>|!=)"""
+  private val compOpPatS  = """(<=|>=|=|<|>|#)"""
   private val assignPatS  = """(:=)"""
-  private val keywordPatS = """(object|begin|end|var|if|then|fi|else|while|do|od|proc|init|WRITE)"""
+  private val keywordPatS = """(array|else|if|of|proc|ref|type|var|while)"""
 
   private val typPatS     = """(int)"""
   private val declarPatS     = """(:|,)"""
 
-  private val leftPPatS      = """(\()"""
-  private val rightPPatS     = """(\))"""
+  private val leftBPatS      = """(\(|\[|\{)"""
+  private val rightBPatS     = """(\)|\]|\})"""
   private val semicolonPatS  = """(;)"""
 
 
-  private val NumberPat    = numberPatS.r
+  private val LiteralPat    = literalPatS.r
+  private val LitHexPat     = litHexPatS.r
+  private val LitAsciiPat   = litAsciiPatS.r
+
   private val IdPat        = idPatS.r
   private val KeywordPat   = keywordPatS.r
   private val AddOpPat     = addOpPatS.r
@@ -35,18 +41,15 @@ class ProgScanner extends ProgToken {
   private val TypPat       = typPatS.r
   private val DefinitionPat    = declarPatS.r
 
-  private val LeftPPat     = leftPPatS.r
-  private val RightPPat    = rightPPatS.r
+  private val LeftPPat     = leftBPatS.r
+  private val RightPPat    = rightBPatS.r
   private val AssignPat    = assignPatS.r
   private val SemicolonPat = semicolonPatS.r
 
-  private val pats = List( KeywordPat, NumberPat, AddOpPat, MultOpPat, CompOpPat, LeftPPat, RightPPat, AssignPat, SemicolonPat,TypPat, DefinitionPat, IdPat )
+  private val pats = List( KeywordPat, LitHexPat, LiteralPat, LitAsciiPat, AddOpPat, MultOpPat, CompOpPat, LeftPPat, RightPPat, AssignPat, SemicolonPat,TypPat, DefinitionPat, IdPat )
 
   private val whitespacePatS  = """\s+"""
-  private val commentPatS     = """\/\/.*\n"""
-
   private val whitespacePat = whitespacePatS.r
-  private val commentPat    = commentPatS.r
 
   /**
     * used in parser to remove trailing whitespace
@@ -124,23 +127,34 @@ class ProgScanner extends ProgToken {
       case None =>
         if (actOffset >= input.length)
           (EOF, input.length, new ExpPosition(input, actOffset))
-        else (errorToken("unexpected end of input"), input.length)
+        else {
+          println(input.substring(actOffset))
+          (errorToken("unexpected end of input"), input.length)
+        }
       case Some(matchedStr) =>
         val pos = new ExpPosition(input, actOffset)
         matchedStr match {
-          case NumberPat(num)   => (NumberToken(num), actOffset, pos)
-          case AddOpPat(op)     => (AddOpToken(op), actOffset, pos)
-          case MultOpPat(op)    => (MultOpToken(op), actOffset, pos)
-          case CompOpPat(p)     => (CompOpToken(p), actOffset, pos)
-          case LeftPPat(p)      => (LeftPToken(p), actOffset, pos)
-          case RightPPat(p)     => (RightPToken(p), actOffset, pos)
-          case KeywordPat(p)    => (KwToken(p), actOffset, pos)
-          case TypPat(p)        => (TypToken(p), actOffset, pos)
-          case DefinitionPat(p)  => (DefinitionToken(p), actOffset, pos)
-          case IdPat(p)         => (IdentToken(p), actOffset, pos)
-          case SemicolonPat(p)  => (SemicolonToken(p), actOffset, pos)
-          case AssignPat(p)     => (AssignToken(p), actOffset, pos)
-          case x                => (ErrorToken("unexpected "+x), actOffset, pos)
+          case LiteralPat(lexem)    => (LiteralToken(lexem, Integer.parseInt(lexem)), actOffset, pos)
+          case LitHexPat(lexem)     => (LiteralToken(lexem, Integer.parseInt (lexem.substring(2),16)), actOffset, pos)
+          case LitAsciiPat(lexem)   =>
+            if(lexem.equals("""`\n`""")){
+              (LiteralToken(lexem, 10), actOffset, pos)
+            }
+            else {
+              (LiteralToken(lexem, Char.char2int(lexem.charAt(1))), actOffset, pos)
+            }
+          case AddOpPat(op)         => (AddOpToken(op), actOffset, pos)
+          case MultOpPat(op)        => (MultOpToken(op), actOffset, pos)
+          case CompOpPat(p)         => (CompOpToken(p), actOffset, pos)
+          case LeftPPat(p)          => (LeftBracketToken(p), actOffset, pos)
+          case RightPPat(p)         => (RightBracketToken(p), actOffset, pos)
+          case KeywordPat(p)        => (KwToken(p), actOffset, pos)
+          case TypPat(p)            => (TypToken(p), actOffset, pos)
+          case DefinitionPat(p)     => (DefinitionToken(p), actOffset, pos)
+          case IdPat(p)             => (IdentToken(p), actOffset, pos)
+          case SemicolonPat(p)      => (SemicolonToken(p), actOffset, pos)
+          case AssignPat(p)         => (AssignToken(p), actOffset, pos)
+          case x                    => (ErrorToken("unexpected "+x), actOffset, pos)
         }
     }
 

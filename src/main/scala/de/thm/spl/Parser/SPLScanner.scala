@@ -10,11 +10,23 @@ object SPLScanner extends Scanners with RegexParsers {
   override type Token = Tokens.Token
 
   override def errorToken(msg: String): Tokens.Token = Tokens.ErrorToken(msg)
-  override def whitespace: Parser[Any] = ??? //TODO: Insert regex for all whitespace
+  override def whitespace: Parser[Any] = """\s*""".r
 
   override def token: Parser[Tokens.Token] = {
-    """proc""".r ^^ Tokens.Keyword | //TODO: Extend regex with remaining keywords
-      ??? //TODO: Add additional token classes with the | operator. See https://static.javadoc.io/org.scala-lang.modules/scala-parser-combinators_2.12/1.1.0/scala/util/parsing/combinator/Parsers.html for details
+    """array|else|if|of|proc|ref|type|var|while""".r    ^^ Tokens.Keyword     |
+    """(0|(?:[1-9][0-9]*))""".r                         ^^ {x => Tokens.LiteralToken(x, Integer.parseInt(x))} |
+    """(0x(?:[a-f]|[A-F]|[0-9])+)""".r                  ^^ {x => Tokens.LiteralToken(x, Integer.parseInt(x.substring(2)))} |
+    """(\`(?:.|\\n)\`)""".r                             ^^ {case "\n" => Tokens.LiteralToken("\n", 10)
+                                                            case a    => Tokens.LiteralToken(a, Char.char2int(a.charAt(1)))} |
+    """(?:\w|\_)+""".r                                  ^^ Tokens.IdentToken |
+    """(\+|\-)""".r                                     ^^ Tokens.AddOpToken |
+    """(\*|/|%)""".r                                    ^^ Tokens.MultOpToken |
+    """(<=|>=|=|<|>|#)""".r                             ^^ Tokens.CompOpToken |
+    """(:|,)""".r                                       ^^ Tokens.DefinitionToken |
+    """(:=)""".r                                        ^^ Tokens.AssignToken |
+    """(\(|\[|\{)""".r                                  ^^ Tokens.LeftBracketToken |
+    """(\)|\]|\})""".r                                  ^^ Tokens.RightBracketToken |
+    """(;)""".r                                         ^^ Tokens.LeftBracketToken
   }
 
   def apply(code: String): Reader[Tokens.Token] = {

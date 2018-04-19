@@ -10,7 +10,7 @@ proc main(){
     type ar = array[5] of int;
 
     n := 0;
-    k := 0;
+    k := 0xA;
 
     // Einlesen
     while(n < 5){
