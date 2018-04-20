@@ -7,20 +7,23 @@ import scala.util.parsing.input.Reader
 
 object LexerTester {
   def main(args: Array[String]): Unit = {
+    var files =  List("array.spl", "Summe.spl", "proc.spl", "fac_iter.spl", "fac_rec.spl")
 
     testAllToken()
 
-    testParser()
+    files.foreach(testParser)
   }
 
-  private def testParser(): Unit ={
-    println("Test Parser\n")
-    val source  = Source.fromFile("array.spl")
+  private def testParser(file: String): Unit ={
+    printf("Test Parser with %s\n", file)
+    val source  = Source.fromFile(file)
     var code    = try source.mkString finally source.close()
     code = code.replaceAll("""\/\/.*\n""", "")
 
     println(code)
-    println(SPLParser(code))
+    SPLParser(code)
+    println("Test Parser end ... \n\n\n\n")
+
   }
 
   /*
@@ -29,7 +32,7 @@ object LexerTester {
   private def testAllToken(): Unit ={
     val source  = Source.fromFile("allToken.spl")
     var code    = try source.mkString finally source.close()
-    var lines   = code.split("\n")
+    val lines   = code.split("\n")
     println("Test AllToken started ... \n")
 
     code = code.replaceAll("""\/\/.*\n""", "")
@@ -40,5 +43,7 @@ object LexerTester {
       printf("in: %s Token: %s\n",s, tmp_scanner.first)
       tmp_scanner = tmp_scanner.rest
     })
+    println("Test AllToken end ... \n\n\n\n")
+
   }
 }

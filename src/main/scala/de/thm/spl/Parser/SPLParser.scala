@@ -40,9 +40,9 @@ object SPLParser extends Parsers {
 
   private def factor: Parser[ValueExpression] =
       number |
+      refExp|
       AddOpToken("-") ~> number ^^ {n => UnaryMinus(n)}
-      LeftBracketToken("(") ~> arithExp <~ RightBracketToken(")") |
-      refExp
+      LeftBracketToken("(") ~> arithExp <~ RightBracketToken(")")
 
   private def refExp: Parser[Dereference] =
     lExp ^^ {le => Dereference(le) }
@@ -52,9 +52,9 @@ object SPLParser extends Parsers {
       ident ^^ VariableReference
 
   private def boolExp: Parser[ValueExpression] =
-    (arithExp <~ CompOpToken("<"))  ~ arithExp ^^ { case e1 ~ e2 => Less(e1, e2) } |
+      (arithExp <~ CompOpToken("<"))  ~ arithExp ^^ { case e1 ~ e2 => Less(e1, e2) } |
       (arithExp <~ CompOpToken(">"))  ~ arithExp ^^ { case e1 ~ e2 => Greater(e1, e2) } |
-      (arithExp <~ CompOpToken("="))  ~ arithExp ^^ { case e1 ~ e2 => Equals(e1, e2) } |
+      (arithExp <~ CompOpToken("==")) ~ arithExp ^^ { case e1 ~ e2 => Equals(e1, e2) } |
       (arithExp <~ CompOpToken("!=")) ~ arithExp ^^ { case e1 ~ e2 => NotEquals(e1, e2) } |
       (arithExp <~ CompOpToken("<=")) ~ arithExp ^^ { case e1 ~ e2 => LessEquals(e1, e2) } |
       (arithExp <~ CompOpToken(">=")) ~ arithExp ^^ { case e1 ~ e2 => GreaterEquals(e1, e2) }

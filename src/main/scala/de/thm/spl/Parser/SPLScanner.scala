@@ -21,7 +21,7 @@ object SPLScanner extends Scanners with RegexParsers {
     """(?:\w|\_)+""".r                                  ^^ Tokens.IdentToken |
     """(\+|\-)""".r                                     ^^ Tokens.AddOpToken |
     """(\*|/|%)""".r                                    ^^ Tokens.MultOpToken |
-    """(<=|>=|=|<|>|#)""".r                             ^^ Tokens.CompOpToken |
+    """(==|<=|>=|=|<|>|#)""".r                          ^^ Tokens.CompOpToken |
     """(:=)""".r                                        ^^ Tokens.AssignToken |
     """(:|,)""".r                                       ^^ Tokens.DefinitionToken |
     """(\(|\[|\{)""".r                                  ^^ Tokens.LeftBracketToken |
