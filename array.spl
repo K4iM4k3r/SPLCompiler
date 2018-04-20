@@ -2,12 +2,12 @@
 // array.spl -- Read, Sort, Write - Array
 //
 
+type ar = array[5] of int;
 
 proc main(){
     var n   : int;
     var k   : int;
     var tmp : int;
-    type ar = array[5] of int;
 
     n := 0;
     k := 0xA;
