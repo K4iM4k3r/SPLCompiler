@@ -1,0 +1,12 @@
+
+  if (x < 0) x := 42;
+  if (x < 0) x := 42; else x := 43;
+
+  while (x < 10) x := x + 1;
+
+
+  { k := i; i := j; j := k; }
+
+
+  swap(n, m);
+  sum(3 * x + 5, 9 - y / 2, z);

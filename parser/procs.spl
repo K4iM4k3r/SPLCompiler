@@ -1,0 +1,6 @@
+  proc nothing() {}
+  proc copy(i: int, ref j: int) { j := i; }
+  proc swap(ref i: int, ref j: int) {
+    var k: int;
+    k := i; i := j; j := k;
+  }

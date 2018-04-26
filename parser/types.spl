@@ -1,0 +1,13 @@
+
+type myInt = int;
+type vector = array [5] of int;
+type matrix = array [3] of vector;
+type mat3 = array [10] of array [20] of vector;
+
+
+type typ1 = array [5] of int;
+type typ2 = typ1;
+
+
+type typ3 = array [5] of int;
+type typ4 = array [5] of int;
