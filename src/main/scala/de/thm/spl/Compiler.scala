@@ -3,6 +3,7 @@ package de.thm.spl
 import java.io.{BufferedWriter, File, FileWriter}
 
 import de.thm.spl.Parser.SPLParser
+import de.thm.spl.symbols.SymbolTable
 import de.thm.{MessageLogger, puck}
 
 object Compiler {
@@ -17,12 +18,12 @@ object Compiler {
     println(MessageLogger)
     if (MessageLogger.hasErrorHappened || ast.isEmpty) return false
 
-    val analyzedSyntax = ContextAnalysis(ast.get)
+    val symbolTable : SymbolTable = ContextAnalysis(ast.get)
 
     println(MessageLogger)
     if (MessageLogger.hasErrorHappened) return false
 
-    val generatedCode = CodeGenerator(analyzedSyntax)
+    val generatedCode = CodeGenerator(ast.get, symbolTable)
 
     println(MessageLogger)
     if (MessageLogger.hasErrorHappened) return false

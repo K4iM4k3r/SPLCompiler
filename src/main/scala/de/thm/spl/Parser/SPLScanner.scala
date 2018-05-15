@@ -10,9 +10,14 @@ object SPLScanner extends Scanners with RegexParsers {
   override type Token = Tokens.Token
 
   override def errorToken(msg: String): Tokens.Token = Tokens.ErrorToken(msg)
-  override def whitespace: Parser[Any] = """\s*""".r
 
-  override def token: Parser[Tokens.Token] = {
+//  def space = """\s""".r
+//  def comment = "//.*".r
+//
+//  override def whitespace: Parser[Any] = rep(space | comment)//rep("""(//.*\n)|(\s+)""".r
+override def whitespace: Parser[Any] = """\s*""".r
+
+  override def token: Parser[Tokens.Token] = positioned {
     """array|else|if|of|proc|ref|type|var|while""".r    ^^ Tokens.Keyword     |
     """(0x(?:[a-f]|[A-F]|[0-9])+)""".r                  ^^ {x => Tokens.LiteralToken(x, Integer.parseInt(x.substring(2), 16))} |
     """(\'(?:.|\\n)\')""".r                             ^^ {case "\n" => Tokens.LiteralToken("\n", 10)

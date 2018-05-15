@@ -7,24 +7,10 @@ import scala.util.parsing.input.Reader
 
 object LexerTester {
   def main(args: Array[String]): Unit = {
-    var files =  List("array.spl", "Summe.spl", "proc.spl", "fac_iter.spl", "fac_rec.spl")
-
     testAllToken()
-
-    files.foreach(testParser)
   }
 
-  private def testParser(file: String): Unit ={
-    printf("Test Parser with %s\n", file)
-    val source  = Source.fromFile(file)
-    var code    = try source.mkString finally source.close()
-    code = code.replaceAll("""\/\/.*\n""", "")
 
-    println(code)
-    SPLParser(code)
-    println("Test Parser end ... \n\n\n\n")
-
-  }
 
   /*
     Test All Token

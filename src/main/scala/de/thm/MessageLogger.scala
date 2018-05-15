@@ -25,4 +25,10 @@ object MessageLogger {
         error + msg + '\n'
       })
   }
+
+  def clear(): Unit ={
+    errors.clear()
+    warnings.clear()
+
+  }
 }

@@ -1,7 +1,9 @@
 package de.thm.spl.Parser
 
+import scala.util.parsing.input.Positional
+
 object Tokens {
-  sealed trait Token {
+  sealed trait Token extends Positional{
     def lexem: String
   }
   case class  ErrorToken(override val lexem: String) extends Token
