@@ -23,7 +23,9 @@ object Compiler {
     println(MessageLogger)
     if (MessageLogger.hasErrorHappened) return false
 
-    val generatedCode = CodeGenerator(ast.get, symbolTable)
+    var objectname: String = options.output.get
+    objectname = objectname.substring(0, objectname.length-2)
+    val generatedCode = CodeGenerator(ast.get, symbolTable, objectname)
 
     println(MessageLogger)
     if (MessageLogger.hasErrorHappened) return false

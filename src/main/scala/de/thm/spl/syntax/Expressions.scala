@@ -1,4 +1,7 @@
 package de.thm.spl.syntax
+import de.thm.spl.symbols.{ParameterSymbol, Scope, VariableSymbol}
+import de.thm.spl.types
+import de.thm.spl.types.ArrayType
 
 object Expressions {
 
@@ -18,6 +21,15 @@ object Expressions {
 
   case class Dereference(reference: ReferenceExpression) extends ValueExpression
 
-  case class VariableReference(name: String) extends ReferenceExpression
-  case class ArrayAccess(reference: ReferenceExpression, index: ValueExpression) extends ReferenceExpression
+  case class VariableReference(name: String) extends ReferenceExpression{
+    override def getType(scope: Scope): types.Type = scope.lookup(name).get match {
+      case ParameterSymbol(_, typ, _) => typ
+      case VariableSymbol(_, typ) => typ
+    }
+  }
+  case class ArrayAccess(reference: ReferenceExpression, index: ValueExpression) extends ReferenceExpression{
+    override def getType(scope: Scope): types.Type = reference.getType(scope) match{
+      case ArrayType(base, _, _) => base
+    }
+  }
 }

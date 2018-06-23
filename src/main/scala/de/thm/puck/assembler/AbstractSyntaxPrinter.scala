@@ -3,19 +3,20 @@ package de.thm.puck.assembler
 import AbstractSyntax._
 
 object AbstractSyntaxPrinter {
-  private def formatValue(value: Long): String = if (value == 0) "0" else if (value < 0) "-0x" + (-value).toHexString.toUpperCase else "0x" + value.toHexString.toUpperCase
+  private def formatValue(value: Long): String = value.toString//if (value == 0) "0" else if (value < 0) "-0x" + (-value).toHexString.toUpperCase else "0x" + value.toHexString.toUpperCase
 
   private def formatRegister(reg: Int): String = "$" + reg
 
   def apply(obj: AbstractSyntax.Object): String = {
     obj.map {
       case Label(label) => label + ":"
+      case Comment(com) => "; " + com
 
       case ExportDirective(label) => ".export " + label.identifier
       case ImportDirective(from, name, internalName) => ".import " + from + " " + name + " " + internalName
       case ObjectDirective(name) => ".object " + name
       case InitializationDirective(label: Tokens.Identifier) => ".initialization " + label.identifier
-      case ExecutableDirective(label: Tokens.Identifier) => ".executable " + label.identifier
+      case ExecutableDirective(label: Label) => ".executable " + label.name
       case ByteDirective(data) => ".byte " + data.map(formatValue).getOrElse("")
       case HalfwordDirective(data) => ".halfword " + data.map(formatValue).getOrElse("")
       case WordDirective(data) => ".word " + data.map(formatValue).getOrElse("")
@@ -43,11 +44,11 @@ object AbstractSyntaxPrinter {
       case Leu(dstR: Int, op1R: Int, op2R: Int) => "LEU " + formatRegister(dstR) + " " + formatRegister(op1R) + " " + formatRegister(op2R)
       case Gtu(dstR: Int, op1R: Int, op2R: Int) => "GTU " + formatRegister(dstR) + " " + formatRegister(op1R) + " " + formatRegister(op2R)
       case Geu(dstR: Int, op1R: Int, op2R: Int) => "GEU " + formatRegister(dstR) + " " + formatRegister(op1R) + " " + formatRegister(op2R)
-      case Brt(srcR: Int, label: Tokens.Identifier) => "BRT " + formatRegister(srcR) + " " + label.identifier
-      case Brf(srcR: Int, label: Tokens.Identifier) => "BRF " + formatRegister(srcR) + " " + label.identifier
-      case Jmp(label: Tokens.Identifier) => "JMP " + label.identifier
+      case Brt(srcR: Int, label: Label) => "BRT " + formatRegister(srcR) + " " + label.name
+      case Brf(srcR: Int, label: Label) => "BRF " + formatRegister(srcR) + " " + label.name
+      case Jmp(label: Label) => "JMP " + label.name
       case Jmpr(dstR: Int) => "JMPR " + formatRegister(dstR)
-      case Call(retR: Int, label: Tokens.Identifier) => "CALL " + formatRegister(retR) + " " + label.identifier
+      case Call(retR: Int, label: Label) => "CALL " + formatRegister(retR) + " " + label.name
       case Callr(retR: Int, dstR: Int) => "CALLR " + formatRegister(retR) + " " + formatRegister(dstR)
       case Halt => "HALT"
       case Ldb(srcR: Int, addressR: Int) => "LDB " + formatRegister(srcR) + " " + formatRegister(addressR)
@@ -67,7 +68,7 @@ object AbstractSyntaxPrinter {
       case Setb(dstR: Int, immediate: Long) => "SETB " + formatRegister(dstR) + " " + formatValue(immediate)
       case Sethw(dstR: Int, immediate: Long) => "SETHW " + formatRegister(dstR) + " " + formatValue(immediate)
       case Setw(dstR: Int, value: Either[Long, Tokens.Identifier]) => "SETW " + formatRegister(dstR) + " " + (if (value.isLeft) formatValue(value.left.get) else value.right.get.identifier)
-      case Cp(dst: Int, src: Int) => "CP " + formatRegister(dst) + formatRegister(src)
+      case Cp(dst: Int, src: Int) => "CP " + formatRegister(dst) + " " + formatRegister(src)
       case Addf(dstR: Int, op1R: Int, op2R: Int) => "ADDF " + formatRegister(dstR) + " " + formatRegister(op1R) + " " + formatRegister(op2R)
       case Subf(dstR: Int, op1R: Int, op2R: Int) => "SUBF " + formatRegister(dstR) + " " + formatRegister(op1R) + " " + formatRegister(op2R)
       case Mulf(dstR: Int, op1R: Int, op2R: Int) => "MULF " + formatRegister(dstR) + " " + formatRegister(op1R) + " " + formatRegister(op2R)

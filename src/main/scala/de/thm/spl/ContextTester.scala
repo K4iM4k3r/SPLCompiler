@@ -12,32 +12,36 @@ object ContextTester{
    final val SPACE: String = "     "
 
     def main(args: Array[String]): Unit = {
-//      val files =  List("acker.spl", "arrayasgn.spl", "arrayparm.spl", "bits.spl", "queens.spl", "gcd.spl", "multiply.spl", "partind1.spl", "partind2.spl", "reftest.spl", "sierpinski.spl", "swap.spl", "" +
-//        "test1.spl", "test2.spl", "test3.spl", "test4.spl", "test5.spl", "test6.spl", "test7.spl", "test8.spl", "test9.spl", "threedim.spl", "time.spl", "twodim.spl")
-//
-//      files.foreach(testContext)
+      val files =  List("acker.spl", "arrayasgn.spl", "arrayparm.spl", "bits.spl", "queens.spl", "gcd.spl", "multiply.spl", "partind1.spl", "partind2.spl", "reftest.spl", "sierpinski.spl", "swap.spl", "" +
+        "test1.spl", "test2.spl", "test3.spl", "test4.spl", "test5.spl", "test6.spl", "test7.spl", "test8.spl", "test9.spl", "threedim.spl", "time.spl", "twodim.spl")
 
-      testContext("queens.spl")
+      files.foreach(testContext)
+
+//      testContext("queens.spl")
     }
 
 
 
     def testContext(prog: String): Unit = {
-      val folder = "/home/kai/Downloads/reftests/"
+      val folder = "./reftests/"
       printf("Test Context with %s\n", prog)
       val source = Source.fromFile(folder + prog)
       val code = try source.mkString finally source.close()
 
       MessageLogger.clear()
       val ast = SPLParser(code)
-//      println(ast)
-      printAst(ast.get)
+      println(ast)
+      if(ast.isDefined) printAst(ast.get)
       println(MessageLogger)
 
       if (!MessageLogger.hasErrorHappened) {
         println("Context Analysis started")
         ContextAnalysis(ast.get)
         println(MessageLogger)
+        if(MessageLogger.hasErrorHappened){
+          println("Not successful finished")
+        }
+        else println("Successful parsed and Context Analysed")
       }
       println("\n")
     }
@@ -49,8 +53,8 @@ object ContextTester{
       case ProcedureDefinition(name, params, vars, body) =>
         var proc: String = SPACE + "ProcedureDefinition(" + name + ",\n"
 
-        if(params.nonEmpty) proc += SPACE * 2 + params.mkString(",\n"+SPACE * 2) + ",\n"
-        if(vars.nonEmpty)   proc += SPACE * 2 + vars.mkString(",\n"+SPACE * 2) + ",\n"
+        if(params.nonEmpty) proc += SPACE * 2 + params.mkString(",\n"+SPACE * 2) + ",\n" else proc += SPACE * 2 + "- ,\n"
+        if(vars.nonEmpty)   proc += SPACE * 2 + vars.mkString(",\n"+SPACE * 2) + ",\n"  else proc += SPACE * 2 + "- ,\n"
 
         proc += body.map(f => styleStmt(3, f) ).mkString(",\n")
         proc += "\n"+ SPACE +")"

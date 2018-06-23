@@ -26,11 +26,35 @@ object ContextAnalysis {
         symbolTable.define(TypeSymbol(name, conversionExpressionToTyp(typexp)))
       case proc@ProcedureDefinition(name, params, variables, _) =>
         storedProcedure += proc
+        var offset_param: Long = 0
+        var offset_vars: Long = 0
+
         symbolTable.define(ProcedureSymbol(name, params.map(p => {
-          ParameterSymbol(p.name, conversionExpressionToTyp(p.typExp), p.isRef)
+          offset_param += 4
+          ParameterSymbol(p.name, conversionExpressionToTyp(p.typExp), p.isRef, offset_param)
         }), variables.map(v => {
-          VariableSymbol(v.name, conversionExpressionToTyp(v.typeExp))
-        })))
+          offset_vars -= calcSize(v.typeExp)
+          val symbol = VariableSymbol(v.name, conversionExpressionToTyp(v.typeExp), offset_vars)
+
+          symbol
+        }), -(offset_vars)))
+
+        // Parameter Offsets
+//        params.foreach(p => {
+//          symbolTable.setOffset(p.name, offset)
+//
+//          offset += 4
+//        })
+
+//
+//        offset = -4
+//        // Variablen Offsets
+//        variables.foreach(v => {
+//          symbolTable.setOffset(v.name, offset)
+//
+//
+//        })
+//        symbolTable.setOffset(proc.name, -(offset + 4))
     }
 
     //checking of Variable, Parameter usage
@@ -39,17 +63,20 @@ object ContextAnalysis {
       p.body.foreach(s => checkStatement(scope, s))
     })
 
+    // Test if main proc exists
+    if (symbolTable.childScope("main").isEmpty) MessageLogger.logError("main proc is missing")
+
     symbolTable
   }
 
   def initSymbolTable(): Unit = {
     symbolTable.define(TypeSymbol("int", IntegerType))
-    symbolTable.define(ProcedureSymbol("printi", List(ParameterSymbol("i", IntegerType, isRef = false)), List()))
-    symbolTable.define(ProcedureSymbol("printc", List(ParameterSymbol("i", IntegerType, isRef = false)), List()))
-    symbolTable.define(ProcedureSymbol("readi", List(ParameterSymbol("i", IntegerType, isRef = true)), List()))
-    symbolTable.define(ProcedureSymbol("readc", List(ParameterSymbol("i", IntegerType, isRef = true)), List()))
-    symbolTable.define(ProcedureSymbol("exit", List(), List()))
-    symbolTable.define(ProcedureSymbol("time", List(ParameterSymbol("i", IntegerType, isRef = true)), List()))
+    symbolTable.define(ProcedureSymbol("printi", List(ParameterSymbol("i", IntegerType, isRef = false, 4)), List(), 0))
+    symbolTable.define(ProcedureSymbol("printc", List(ParameterSymbol("i", IntegerType, isRef = false, 4)), List(), 0))
+    symbolTable.define(ProcedureSymbol("readi", List(ParameterSymbol("i", IntegerType, isRef = true, 4)), List(), 0))
+    symbolTable.define(ProcedureSymbol("readc", List(ParameterSymbol("i", IntegerType, isRef = true, 4)), List(), 0))
+    symbolTable.define(ProcedureSymbol("exit", List(), List(), 0))
+    symbolTable.define(ProcedureSymbol("time", List(ParameterSymbol("i", IntegerType, isRef = true, 4)), List(), 0))
 
   }
 
@@ -78,7 +105,7 @@ object ContextAnalysis {
         body.foreach(bp => checkStatement(scope, bp))
       case Call(name, arguments) =>
         symbolTable.lookup(name) match {
-          case Some(p@ProcedureSymbol(_, _, _)) =>
+          case Some(p@ProcedureSymbol(_, _, _, _)) =>
             if (p.parameters.length != arguments.length) {
               MessageLogger.logError("Number of Arguments are not equal with Procedure-Definition")
             }
@@ -113,7 +140,7 @@ object ContextAnalysis {
       case VariableReference(name) => scope.lookup(name)
       case ArrayAccess(reference, valueExpression) =>
         checkReferenceExpression(scope, reference) match {
-          case Some(p@ParameterSymbol(_, typ, _)) =>
+          case Some(p@ParameterSymbol(_, typ, _, _)) =>
             if (typ.isInstanceOf[types.ArrayType]) {
               checkValueExpression(scope, valueExpression)
               Some(p)
@@ -122,7 +149,7 @@ object ContextAnalysis {
               MessageLogger.logError(s"Variable ist not an Array it is typ of $typ!")
               None
             }
-          case Some(v@VariableSymbol(_, typ)) =>
+          case Some(v@VariableSymbol(_, typ, _)) =>
             if (typ.isInstanceOf[types.ArrayType]) {
               checkValueExpression(scope, valueExpression)
               Some(v)
@@ -140,9 +167,9 @@ object ContextAnalysis {
   def checkAndGetTyp(scope: Scope, referenceExpression: ReferenceExpression): Type = {
     referenceExpression match {
       case VariableReference(name) => scope.lookup(name) match {
-        case Some(ParameterSymbol(_, typ, _)) => typ
-        case Some(VariableSymbol(_, typ)) => typ
-        case Some(ProcedureSymbol(_, _, _)) => MessageLogger.logError(s"$name is a procedure and not a variable"); ErrorType
+        case Some(ParameterSymbol(_, typ, _, _)) => typ
+        case Some(VariableSymbol(_, typ, _)) => typ
+        case Some(ProcedureSymbol(_, _, _, _)) => MessageLogger.logError(s"$name is a procedure and not a variable"); ErrorType
         case Some(TypeSymbol(_, _)) => MessageLogger.logError(s"$name is a typ and not a variable"); ErrorType
         case None => MessageLogger.logError(s"$name is not defined"); ErrorType
       }
@@ -153,7 +180,7 @@ object ContextAnalysis {
         }
         val baseType = checkAndGetTyp(scope, reference)
         baseType match {
-          case ArrayType(base, _) => base
+          case ArrayType(base, _, _) => base
           case typ => MessageLogger.logError(s"Illegal typ found ($typ), but expected array!"); ErrorType
         }
       }
@@ -197,7 +224,12 @@ object ContextAnalysis {
 
 
   def conversionExpressionToTyp(typeExpression: TypeExpression): types.Type = typeExpression match {
-    case ArrayTypeExpression(base, size) => ArrayType(conversionExpressionToTyp(base), size.integer)
+    case ArrayTypeExpression(base, size) =>
+      val t = conversionExpressionToTyp(base)
+      t match {
+        case ArrayType(_, _, byteSize) => ArrayType(t, size.integer,byteSize * size.integer)
+        case IntegerType =>  ArrayType(t, size.integer, size.integer * 4)
+      }
     case NamedTypeExpression(symbol) => symbolTable.lookup(symbol) match {
       case Some(TypeSymbol(_, typ)) => typ
       case Some(sym) => MessageLogger.logError(s"$sym is not a typ"); ErrorType
@@ -206,8 +238,22 @@ object ContextAnalysis {
   }
 
 
-  def clear(): Unit = {
+  def calcSize(typeExpression: TypeExpression): Long ={
+    typeExpression match {
+      case ArrayTypeExpression(base, size) =>
+        val res = calcSize(base) * size.integer
+        res
+      case NamedTypeExpression(symbol) => symbolTable.lookup(symbol) match {
+        case Some(TypeSymbol(_, typ)) => calc(typ)
+      }
+    }
+  }
 
+  def calc(typ: Type): Long ={
+    typ match {
+      case IntegerType => 4
+      case ArrayType (base, size, _) => calc(base) * size
+    }
   }
 
 }

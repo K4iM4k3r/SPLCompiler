@@ -9,23 +9,34 @@ class DefinitionScope(override val parent: Option[Scope]) extends Scope {
   override def lookup(name: String): Option[Symbol] = {
     definitions.get(name).orElse(parent.flatMap(_.lookup(name)))
   }
+
   override def define(symbol: Symbol): Unit = {
     lookup(symbol.name) match{
       case Some(_) => MessageLogger.logError(s"""$symbol already defined""")
       case None    =>
         definitions += (symbol.name -> symbol)
         symbol match {
-          case ProcedureSymbol(name, parameters, variables) =>
+          case ProcedureSymbol(name, parameters, variables, _) =>
             childrenScopes += (name -> new DefinitionScope(Some(this)))
             childScope(name) match {
               case Some(scope) =>
                 parameters.foreach(scope.define)
                 variables.foreach(scope.define)
+              case _ => MessageLogger.logError("Childscope not found")
             }
           case _ =>
         }
     }
   }
-  override def childScope(name: String): Option[Scope] = childrenScopes.get(name)
+  override def childScope(name: String): Option[DefinitionScope] = childrenScopes.get(name)
 
+
+  def getOffset(name: String): Long = {
+    lookup(name).get match {
+      case VariableSymbol(_,_, offset) => offset
+      case ParameterSymbol(_,_,_,offset) => offset
+      case ProcedureSymbol(_,_,_, offset) => offset
+      case _ => 0
+    }
+  }
 }

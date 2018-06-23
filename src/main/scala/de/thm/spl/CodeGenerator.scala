@@ -32,7 +32,7 @@ object CodeGenerator {
   var registers: List[Int] = (1 to 28).toList
 
   // Create labels
-  var labelCount = 0
+  var labelCount = -1
   def newLabel : Label = {
     labelCount = labelCount + 1
 
@@ -149,16 +149,17 @@ object CodeGenerator {
 
           generateCodeBool(condition, thenLabel)
           if(!elseCmd.equals(EmptyStatement)){
-
-            code += thenLabel
             generateCodeCmd(thenCmd)
-
-            generateCodeCmd(elseCmd)
             code += Jmp(exitLabel)
+            code += thenLabel
+            generateCodeCmd(elseCmd)
+            code += exitLabel
           }
+          else {
+            generateCodeCmd(thenCmd)
+            code += thenLabel
 
-//          code += thenLabel
-
+          }
         case While(condition, body) =>
           val startLabel = newLabel
           val continueLabel = newLabel

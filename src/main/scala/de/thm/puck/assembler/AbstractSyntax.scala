@@ -7,15 +7,16 @@ object AbstractSyntax {
 
   trait AssemblerLine extends Positional
 
-  case class Label(name: Tokens.Identifier) extends AssemblerLine
+  case class Label(name: String) extends AssemblerLine
+  case class Comment(comment: String) extends AssemblerLine
 
   trait Directive extends AssemblerLine
 
   case class ExportDirective(label: Tokens.Identifier) extends Directive
-  case class ImportDirective(fromObject: Tokens.Identifier, label: Tokens.Identifier, internalName: Tokens.Identifier) extends Directive
-  case class ObjectDirective(name: Tokens.Identifier) extends Directive
+  case class ImportDirective(fromObject: String, label: String, internalName: String) extends Directive
+  case class ObjectDirective(name: String) extends Directive
   case class InitializationDirective(label: Tokens.Identifier) extends Directive
-  case class ExecutableDirective(label: Tokens.Identifier) extends Directive
+  case class ExecutableDirective(label: Label) extends Directive
   case class ByteDirective(data : Option[Long]) extends Directive
   case class HalfwordDirective(data: Option[Long]) extends Directive
   case class WordDirective(data: Option[Long]) extends Directive
@@ -45,11 +46,11 @@ object AbstractSyntax {
   case class Leu(dstR: Int, op1R: Int, op2R: Int) extends Instruction
   case class Gtu(dstR: Int, op1R: Int, op2R: Int) extends Instruction
   case class Geu(dstR: Int, op1R: Int, op2R: Int) extends Instruction
-  case class Brt(srcR: Int, label: Tokens.Identifier) extends Instruction
-  case class Brf(srcR: Int, label: Tokens.Identifier) extends Instruction
-  case class Jmp(label: Tokens.Identifier) extends Instruction
+  case class Brt(srcR: Int, label: Label) extends Instruction
+  case class Brf(srcR: Int, label: Label) extends Instruction
+  case class Jmp(label: Label) extends Instruction
   case class Jmpr(dstR: Int) extends Instruction
-  case class Call(retR: Int, label: Tokens.Identifier) extends Instruction
+  case class Call(retR: Int, label: Label) extends Instruction
   case class Callr(retR: Int, dstR: Int) extends Instruction
   case object Halt extends Instruction
   case class Ldb(srcR: Int, addressR: Int) extends Instruction
