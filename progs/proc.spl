@@ -3,7 +3,7 @@
 //
 
 
-proc mains(){
+proc main(){
     var a : int;
     var b : int;
     var c : int;
@@ -15,5 +15,5 @@ proc mains(){
 }
 
 proc sum(a: int, b: int, ref c: int){
-    c := a + b;
+   c := a + b;
 }

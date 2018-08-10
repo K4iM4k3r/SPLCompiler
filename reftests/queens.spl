@@ -1,0 +1,89 @@
+//
+// queens.spl -- the 8-queens problem
+//
+
+
+type A8 = array [8] of int;
+type A15 = array [15] of int;
+
+  type vector = array [5] of int;
+  type matrix = array [3] of vector;
+  type mat3 = array [10] of array [20] of vector;
+
+
+proc main() {
+  var row: A8;
+  var col: A8;
+  var _diag1: A15;
+  var diag2: A15;
+  var i: int;
+
+  i := 0;
+  while (i < 8) {
+    row[i] := 0;
+    col[i] := 0;
+    i := i + 1;
+  }
+  i := 0;
+  while (i < 15) {
+    _diag1[i] := 0;
+    diag2[i] := 0;
+    i := i + 1;
+  }
+  try(0, row, col, _diag1, diag2);
+}
+
+
+proc try(c: int, ref row: A8, ref col: A8, ref _diag1: A15, ref diag2: A15) {
+  var r: int;
+
+  if (c = 8) {
+    printboard(col);
+  } else {
+    r := 0;
+    while (r < 8) {
+      if (row[r] = 0) {
+        if (_diag1[r + c] = 0) {
+          if (diag2[r + 7 - c] = 0) {
+            // update
+            row[r] := 1;
+            _diag1[r + c] := 1;
+            diag2[r + 7 - c] := 1;
+            col[c] := r;
+            // try
+            try(c + 1, row, col, _diag1, diag2);
+            // downdate
+            row[r] := 0;
+            _diag1[r + c] := 0;
+            diag2[r + 7 - c] := 0;
+          }
+        }
+        else r := 0;
+      }
+      r := r + 1;
+    }
+  }
+}
+
+
+proc printboard(ref col: A8) {
+  var i: int;
+  var j: int;
+
+  i := 0;
+  while (i < 8) {
+    j := 0;
+    while (j < 8) {
+      printc(' ');
+      if (col[i] = j) {
+        printc('0');
+      } else {
+        printc('.');
+      }
+      j := j + 1;
+    }
+    printc('\n');
+    i := i + 1;
+  }
+  printc('\n');
+}

@@ -23,8 +23,8 @@ object Expressions {
 
   case class VariableReference(name: String) extends ReferenceExpression{
     override def getType(scope: Scope): types.Type = scope.lookup(name).get match {
-      case ParameterSymbol(_, typ, _) => typ
-      case VariableSymbol(_, typ) => typ
+      case ParameterSymbol(_, typ, _, _) => typ
+      case VariableSymbol(_, typ, _) => typ
     }
   }
   case class ArrayAccess(reference: ReferenceExpression, index: ValueExpression) extends ReferenceExpression{

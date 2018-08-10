@@ -13,25 +13,34 @@ object Compiler {
 
   def apply(options: Options): Boolean = {
     val source = io.Source.fromFile(options.input.get).mkString
-    val ast = SPLParser(source)
-
-    println(MessageLogger)
-    if (MessageLogger.hasErrorHappened || ast.isEmpty) return false
-
-    val symbolTable : SymbolTable = ContextAnalysis(ast.get)
-
-    println(MessageLogger)
-    if (MessageLogger.hasErrorHappened) return false
-
     var objectname: String = options.output.get
     objectname = objectname.substring(0, objectname.length-2)
-    val generatedCode = CodeGenerator(ast.get, symbolTable, objectname)
 
-    println(MessageLogger)
-    if (MessageLogger.hasErrorHappened) return false
+    val ast = SPLParser(source)
+    if (MessageLogger.hasErrorHappened || ast.isEmpty){
+      System.err.println(objectname)
+      println(MessageLogger)
+      System.err.println(MessageLogger)
+      return false
+    }
+
+    val symbolTable : SymbolTable = ContextAnalysis(ast.get)
+    if (MessageLogger.hasErrorHappened){
+      System.err.println(objectname)
+      println(MessageLogger)
+      System.err.println(MessageLogger)
+      return false
+    }
+
+    val generatedCode = CodeGenerator(ast.get, symbolTable, objectname)
+    if (MessageLogger.hasErrorHappened){
+      System.err.println(objectname)
+      println(MessageLogger)
+      System.err.println(MessageLogger)
+      return false
+    }
 
     val asmCode = puck.assembler.AbstractSyntaxPrinter(generatedCode)
-
     val bw = new BufferedWriter(new FileWriter(new File(options.output.get)))
     bw.write(asmCode)
     bw.close()

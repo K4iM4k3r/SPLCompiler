@@ -14,7 +14,7 @@ proc main(){
 proc fac(n: int, ref res: int){
     var tmp_res : int;
 
-    if(n == 1){
+    if(n = 1){
         res := 1;
     }
     else {

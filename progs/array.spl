@@ -8,13 +8,14 @@ proc main(){
     var n   : int;
     var k   : int;
     var tmp : int;
+    var a : ar;
 
     n := 0;
     k := 0xA;
 
     // Einlesen
     while(n < 5){
-        readi(ar[n]);
+        readi(a[n]);
         n := n + 1;
     }
 
@@ -23,10 +24,10 @@ proc main(){
     while(n < 5){
         k := n + 1 ;
         while(k < 5){
-            if(ar[n] > ar[k]){
-                tmp := ar[n];
-                ar[n] := ar[k];
-                ar[k] := tmp;
+            if(a[n] > a[k]){
+                tmp := a[n];
+                a[n] := a[k];
+                a[k] := tmp;
             }
             k := k + 1;
         }
@@ -37,7 +38,7 @@ proc main(){
     n := 0;
 
     while(n < 5){
-        printi(ar[n]);
+        printi(a[n]);
     }
 }
 

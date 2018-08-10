@@ -1,0 +1,8 @@
+#!/bin/sh
+
+SRC=$1.spl
+ASM=$1.asm
+BIN=$1.bin
+MAP=$1.map
+
+./sim -i -t 1 -g -l $BIN

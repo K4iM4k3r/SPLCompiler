@@ -8,5 +8,5 @@ proc main(){
     var b : int;
     readi(a);
     readi(b);
-    printi(a+b);
+    printi((a+b)/(8-8));
 }

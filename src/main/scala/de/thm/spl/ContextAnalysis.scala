@@ -13,6 +13,8 @@ import scala.collection.mutable.ListBuffer
 
 object ContextAnalysis {
   var symbolTable: SymbolTable = new SymbolTable
+  var counterMaxArg: Int = 0
+  var counterCalls: Int = 0
 
   def apply(abstractSyntax: syntax.Program): SymbolTable = {
     val storedProcedure: ListBuffer[ProcedureDefinition] = new ListBuffer[ProcedureDefinition]
@@ -24,43 +26,39 @@ object ContextAnalysis {
     abstractSyntax.definitions.foreach {
       case TypeDefinition(name, typexp) =>
         symbolTable.define(TypeSymbol(name, conversionExpressionToTyp(typexp)))
-      case proc@ProcedureDefinition(name, params, variables, _) =>
+      case proc@ProcedureDefinition(name, params, variables, body) =>
         storedProcedure += proc
         var offset_param: Long = 0
         var offset_vars: Long = 0
 
         symbolTable.define(ProcedureSymbol(name, params.map(p => {
           offset_param += 4
-          ParameterSymbol(p.name, conversionExpressionToTyp(p.typExp), p.isRef, offset_param)
+          val typParam = conversionExpressionToTyp(p.typExp)
+          typParam match {
+            case ArrayType(_,_,_) if !p.isRef => MessageLogger.logError(s"""parameter '${p.name}' must be a reference parameter""")
+            case _ =>
+          }
+          ParameterSymbol(p.name, typParam, p.isRef, offset_param-4)
         }), variables.map(v => {
           offset_vars -= calcSize(v.typeExp)
           val symbol = VariableSymbol(v.name, conversionExpressionToTyp(v.typeExp), offset_vars)
 
           symbol
-        }), -(offset_vars)))
+        }), -offset_vars, 0, 0))
 
-        // Parameter Offsets
-//        params.foreach(p => {
-//          symbolTable.setOffset(p.name, offset)
-//
-//          offset += 4
-//        })
-
-//
-//        offset = -4
-//        // Variablen Offsets
-//        variables.foreach(v => {
-//          symbolTable.setOffset(v.name, offset)
-//
-//
-//        })
-//        symbolTable.setOffset(proc.name, -(offset + 4))
     }
 
     //checking of Variable, Parameter usage
     storedProcedure.foreach(p => {
       val scope: Scope = symbolTable.childScope(p.name).get
+      // Reset of counters
+      counterCalls = 0
+      counterMaxArg = 0
+
       p.body.foreach(s => checkStatement(scope, s))
+
+      symbolTable.setMaxArguments(p.name, counterMaxArg)
+      symbolTable.setNumCalls(p.name, counterCalls)
     })
 
     // Test if main proc exists
@@ -71,12 +69,12 @@ object ContextAnalysis {
 
   def initSymbolTable(): Unit = {
     symbolTable.define(TypeSymbol("int", IntegerType))
-    symbolTable.define(ProcedureSymbol("printi", List(ParameterSymbol("i", IntegerType, isRef = false, 4)), List(), 0))
-    symbolTable.define(ProcedureSymbol("printc", List(ParameterSymbol("i", IntegerType, isRef = false, 4)), List(), 0))
-    symbolTable.define(ProcedureSymbol("readi", List(ParameterSymbol("i", IntegerType, isRef = true, 4)), List(), 0))
-    symbolTable.define(ProcedureSymbol("readc", List(ParameterSymbol("i", IntegerType, isRef = true, 4)), List(), 0))
-    symbolTable.define(ProcedureSymbol("exit", List(), List(), 0))
-    symbolTable.define(ProcedureSymbol("time", List(ParameterSymbol("i", IntegerType, isRef = true, 4)), List(), 0))
+    symbolTable.define(ProcedureSymbol("printi", List(ParameterSymbol("i", IntegerType, isRef = false, 4)), List(), 0, 0, 0))
+    symbolTable.define(ProcedureSymbol("printc", List(ParameterSymbol("i", IntegerType, isRef = false, 4)), List(), 0, 0, 0))
+    symbolTable.define(ProcedureSymbol("readi", List(ParameterSymbol("i", IntegerType, isRef = true, 4)), List(), 0, 0, 0))
+    symbolTable.define(ProcedureSymbol("readc", List(ParameterSymbol("i", IntegerType, isRef = true, 4)), List(), 0, 0, 0))
+    symbolTable.define(ProcedureSymbol("exit", List(), List(), 0, 0, 0))
+    symbolTable.define(ProcedureSymbol("time", List(ParameterSymbol("i", IntegerType, isRef = true, 4)), List(), 0, 0, 0))
 
   }
 
@@ -104,8 +102,15 @@ object ContextAnalysis {
       case CompoundStatement(body) =>
         body.foreach(bp => checkStatement(scope, bp))
       case Call(name, arguments) =>
+        // update Counter
+        counterCalls += 1
+
+        if(counterMaxArg < arguments.length){
+          counterMaxArg =  arguments.length
+        }
+
         symbolTable.lookup(name) match {
-          case Some(p@ProcedureSymbol(_, _, _, _)) =>
+          case Some(p@ProcedureSymbol(_, _, _, _,_,_)) =>
             if (p.parameters.length != arguments.length) {
               MessageLogger.logError("Number of Arguments are not equal with Procedure-Definition")
             }
@@ -169,7 +174,7 @@ object ContextAnalysis {
       case VariableReference(name) => scope.lookup(name) match {
         case Some(ParameterSymbol(_, typ, _, _)) => typ
         case Some(VariableSymbol(_, typ, _)) => typ
-        case Some(ProcedureSymbol(_, _, _, _)) => MessageLogger.logError(s"$name is a procedure and not a variable"); ErrorType
+        case Some(ProcedureSymbol(_, _, _, _,_,_)) => MessageLogger.logError(s"$name is a procedure and not a variable"); ErrorType
         case Some(TypeSymbol(_, _)) => MessageLogger.logError(s"$name is a typ and not a variable"); ErrorType
         case None => MessageLogger.logError(s"$name is not defined"); ErrorType
       }
@@ -229,6 +234,7 @@ object ContextAnalysis {
       t match {
         case ArrayType(_, _, byteSize) => ArrayType(t, size.integer,byteSize * size.integer)
         case IntegerType =>  ArrayType(t, size.integer, size.integer * 4)
+        case _ => MessageLogger.logError(s"""invalid base typ $base"""); ErrorType
       }
     case NamedTypeExpression(symbol) => symbolTable.lookup(symbol) match {
       case Some(TypeSymbol(_, typ)) => typ
@@ -245,6 +251,7 @@ object ContextAnalysis {
         res
       case NamedTypeExpression(symbol) => symbolTable.lookup(symbol) match {
         case Some(TypeSymbol(_, typ)) => calc(typ)
+        case _ => MessageLogger.logError(s"""symbol $symbol is not typesymbol"""); 0
       }
     }
   }
@@ -253,8 +260,22 @@ object ContextAnalysis {
     typ match {
       case IntegerType => 4
       case ArrayType (base, size, _) => calc(base) * size
+      case _ => MessageLogger.logError(s"""base typ $typ is not array or integer"""); 0
     }
   }
 
+  def getMaxArgs(body: List[Statement]): Int ={
+    body.map{
+      case Call(_,arguments) => arguments.length
+      case _ => -1
+    }.max
+  }
+
+  def getNumCalls(body: List[Statement]): Int ={
+    body.count{
+      case Call(_,_) => true
+      case _ =>  false
+    }
+  }
 }
 
